@@ -1,0 +1,70 @@
+# Open-Source SEC 10-Q RAG Analyst
+
+Build a local retrieval-augmented generation assistant that answers questions
+about SEC 10-Q filings with grounded citations.
+
+## Project Goal
+
+By the end of this project, we will have a working portfolio project that:
+
+- Ingests SEC 10-Q filings.
+- Extracts page-aware text and metadata.
+- Chunks filings into retrievable passages.
+- Builds dense and hybrid retrieval indexes.
+- Uses an open-weight local LLM to answer questions from retrieved context.
+- Returns citations and abstains when evidence is missing.
+- Evaluates retrieval and answer faithfulness.
+- Ships as a FastAPI service with a simple UI and Docker setup.
+
+## Learning Contract
+
+Every implementation module includes:
+
+- Generic notes on the topic.
+- Questions we solve while building.
+- Potential interview questions.
+- Working code or measurable project output.
+
+## Planned Stack
+
+- Language: Python 3.10+
+- PDF parsing: PyMuPDF first, table extraction later
+- Embeddings: sentence-transformers with open-source embedding models
+- Retrieval: FAISS or Qdrant, plus BM25 for hybrid retrieval
+- LLM runtime: Ollama or llama.cpp with open-weight models
+- API: FastAPI
+- Evaluation: custom Recall@k first, RAGAS/DeepEval later
+- Packaging: Docker
+
+## Repository Layout
+
+```text
+.
+|-- docs/
+|   |-- implementation_plan.md
+|   |-- setup.md
+|   `-- classes/
+|       |-- 01_rag_and_sec_10q.md
+|       `-- 02_dataset_exploration.md
+|-- scripts/
+|   `-- explore_dataset.py
+|-- src/
+|   `-- sec_rag/
+|       |-- __init__.py
+|       |-- config.py
+|       `-- dataset.py
+|-- tests/
+|-- AGENTS.md
+|-- pyproject.toml
+`-- README.md
+```
+
+## Current Status
+
+Class 01 and Class 02 are ready. The first runnable script is:
+
+```powershell
+python scripts/explore_dataset.py --data-dir data/raw/sec-10-q
+```
+
+Use it after downloading or cloning the dataset into `data/raw/sec-10-q`.

@@ -1,0 +1,30 @@
+# Codex Project Instructions
+
+You are helping build an interview-focused ML engineering portfolio project.
+
+## Teaching Style
+
+For every major change:
+
+- Explain the concept before or alongside the implementation.
+- Prefer simple first principles before framework abstractions.
+- Add notes that a beginner can revise before interviews.
+- Include questions and interview prompts where useful.
+
+## Engineering Style
+
+- Use open-source and free tools only for the core implementation.
+- Keep source files small and readable.
+- Prefer measurable experiments over opinions.
+- Do not hide retrieval internals; expose chunks, scores, metadata, and citations.
+- Use page-aware metadata everywhere citations are involved.
+
+## Verification
+
+- Add tests for pure functions.
+- Add small smoke tests for scripts.
+- Track metrics before changing retrieval strategies.
+
+## Project Principle
+
+If a choice cannot be explained in an interview, simplify it or document it.
