@@ -30,10 +30,17 @@ Interview angle:
 
 Outcome:
 
-- Download or clone the KG-RAG SEC 10-Q dataset.
-- Inspect PDFs and Q&A files.
-- Build a small data profile.
+- Download or clone the KG-RAG SEC 10-Q dataset. Done locally via ignored `data/raw`.
+- Inspect PDFs and Q&A files. Done.
+- Build a small data profile. Done.
 - First exploration script. Done.
+
+Current dataset profile:
+
+- 20 SEC 10-Q PDF files.
+- 7 likely Q&A CSV files.
+- Primary Q&A file: `qna_data.csv` with 195 rows.
+- Companies include Apple, Amazon, Intel, Microsoft, and NVIDIA.
 
 Learning:
 
@@ -49,8 +56,9 @@ Interview angle:
 
 Outcome:
 
-- Extract page-aware text from filings.
-- Preserve document ID, company, filing period, page number, and section hints.
+- Extract page-aware text from filings. Initial parser added.
+- Preserve document ID, source path, page number, and total pages. Initial metadata added.
+- Preserve company, filing period, and section hints. Pending.
 
 Learning:
 

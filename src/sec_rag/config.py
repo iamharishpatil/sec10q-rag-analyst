@@ -12,6 +12,8 @@ class ProjectPaths:
     data_dir: Path
     raw_dir: Path
     processed_dir: Path
+    sec_10q_raw_dir: Path
+    parsed_pages_dir: Path
 
 
 def get_project_paths(root: Path | None = None) -> ProjectPaths:
@@ -23,4 +25,6 @@ def get_project_paths(root: Path | None = None) -> ProjectPaths:
         data_dir=data_dir,
         raw_dir=data_dir / "raw",
         processed_dir=data_dir / "processed",
+        sec_10q_raw_dir=data_dir / "raw" / "sec-10-q",
+        parsed_pages_dir=data_dir / "processed" / "pages",
     )

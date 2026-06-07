@@ -3,3 +3,5 @@
 # Keep this file limited to dependencies needed to run project code.
 # Add ML/RAG packages only when the corresponding module is implemented.
 -e .
+
+pymupdf>=1.24

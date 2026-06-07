@@ -47,12 +47,15 @@ Every implementation module includes:
 |       |-- 01_rag_and_sec_10q.md
 |       `-- 02_dataset_exploration.md
 |-- scripts/
-|   `-- explore_dataset.py
+|   |-- acquire_dataset.py
+|   |-- explore_dataset.py
+|   `-- parse_pdfs.py
 |-- src/
 |   `-- sec_rag/
 |       |-- __init__.py
 |       |-- config.py
-|       `-- dataset.py
+|       |-- dataset.py
+|       `-- pdf_parser.py
 |-- tests/
 |-- AGENTS.md
 |-- pyproject.toml
@@ -69,6 +72,18 @@ python scripts/explore_dataset.py --data-dir data/raw/sec-10-q
 
 Use it after downloading or cloning the dataset into `data/raw/sec-10-q`.
 
+Acquire the dataset repository locally:
+
+```powershell
+python scripts\acquire_dataset.py
+```
+
+Parse PDFs into page-aware JSONL records:
+
+```powershell
+python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
+```
+
 ## Quickstart
 
 From the project root:
@@ -80,4 +95,5 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python scripts/explore_dataset.py --help
+python scripts/parse_pdfs.py --help
 ```

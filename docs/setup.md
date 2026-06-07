@@ -45,7 +45,6 @@ python -m pip install -r requirements-dev.txt
 
 Later modules will add packages such as:
 
-- `pymupdf` for PDF parsing.
 - `sentence-transformers` for embeddings.
 - `faiss-cpu` or `qdrant-client` for indexing.
 - `rank-bm25` for keyword retrieval.
@@ -68,8 +67,13 @@ In VS Code:
 
 ## Next Command We Will Run
 
-After creating the environment, download or clone the dataset into
-`data/raw/sec-10-q`, then run:
+After creating the environment, acquire the dataset:
+
+```powershell
+python scripts\acquire_dataset.py
+```
+
+Then run:
 
 ```text
 scripts/explore_dataset.py
@@ -79,4 +83,10 @@ The script will inspect the SEC 10-Q dataset once downloaded:
 
 ```powershell
 python scripts/explore_dataset.py --data-dir data/raw/sec-10-q
+```
+
+Parse PDFs into page-aware records:
+
+```powershell
+python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
 ```
