@@ -136,9 +136,20 @@ Interview angle:
 
 Outcome:
 
-- Add BM25.
-- Combine lexical and dense retrieval.
-- Add reranking.
+- Add BM25. Done.
+- Combine lexical and dense retrieval. Done.
+- Refactor pipeline and retrieval into OOP application classes. Done.
+- Add reranking. Pending.
+
+Current hybrid retrieval profile:
+
+- `PipelineRunner` runs the current pipeline through Python classes instead of subprocess orchestration.
+- `Retriever` interface supports dense, BM25, hybrid, and NumPy baseline retrieval.
+- BM25 index stores 1,935 chunk rows under ignored `data/indexes/bm25`.
+- Dense Qdrant Recall@5: 0.949 over 195 Q&A rows.
+- BM25 Recall@5: 0.774 over 195 Q&A rows.
+- Hybrid 0.65/0.35 Recall@5: 0.944 over 195 Q&A rows.
+- Dense remains the best source-document Recall@5 baseline; hybrid is retained for exact-token/numeric retrieval experiments.
 
 Learning:
 

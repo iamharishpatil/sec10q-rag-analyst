@@ -74,13 +74,13 @@ python scripts\acquire_dataset.py
 Run the current pipeline end to end:
 
 ```powershell
-python scripts\run_pipeline.py
+python scripts\run_pipeline.py --retriever hybrid
 ```
 
 For a faster smoke test:
 
 ```powershell
-python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5
+python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5 --pages-dir data\processed\smoke-pages --chunks-dir data\processed\smoke-chunks --qdrant-index-dir data\indexes\smoke-qdrant --bm25-index-dir data\indexes\smoke-bm25
 ```
 
 Then run:
@@ -110,7 +110,19 @@ python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data
 Build the Qdrant vector database index:
 
 ```powershell
-python scripts\build_index.py --chunks-dir data\processed\chunks --index-dir data\indexes\qdrant
+python scripts\build_index.py --backend dense
+```
+
+Build the BM25 lexical index:
+
+```powershell
+python scripts\build_index.py --backend bm25
+```
+
+Build both indexes for hybrid retrieval:
+
+```powershell
+python scripts\build_index.py --backend hybrid
 ```
 
 Run retrieval:
@@ -128,16 +140,18 @@ python scripts\retrieve.py --query "What was Microsoft's revenue?" --ticker MSFT
 Evaluate source-document retrieval:
 
 ```powershell
-python scripts\evaluate_retrieval.py --top-k 5
+python scripts\evaluate_retrieval.py --backend dense --top-k 5
+python scripts\evaluate_retrieval.py --backend bm25 --top-k 5
+python scripts\evaluate_retrieval.py --backend hybrid --top-k 5
 ```
 
 Expected current retrieval baseline after indexing all chunks:
 
 ```text
 Questions: 195
-Backend: qdrant
-Hits@5: 185
-Source Recall@5: 0.949
+Dense Hits@5: 185, Source Recall@5: 0.949
+BM25 Hits@5: 151, Source Recall@5: 0.774
+Hybrid Hits@5: 184, Source Recall@5: 0.944
 ```
 
 Local Qdrant mode uses file locking. Run index/retrieval/evaluation commands

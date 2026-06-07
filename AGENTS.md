@@ -20,12 +20,14 @@ For every major change:
 - Use page-aware metadata everywhere citations are involved.
 - Chunking outputs must preserve source document and page metadata for citation tracing.
 - Retrieval phases should be production-shaped: use a vector database, metadata payloads, filters, and explicit metrics; keep simple baselines only for explanation/debugging.
+- Use OOP where it improves boundaries: orchestration, interchangeable retrieval strategies, and service-style dependencies. Keep pure transformations as functions.
 
 ## Verification
 
 - Add tests for pure functions.
 - Add small smoke tests for scripts.
 - Track metrics before changing retrieval strategies.
+- Compare retrieval backends with the same benchmark before choosing defaults.
 
 ## Phase Completion
 

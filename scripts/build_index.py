@@ -1,78 +1,57 @@
-"""Build a local dense vector index from chunk JSONL files."""
+"""Build local retrieval indexes from chunk JSONL files."""
 
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
-from sec_rag.config import get_project_paths
-from sec_rag.embeddings import DEFAULT_EMBEDDING_MODEL, embed_texts, load_embedding_model
-from sec_rag.qdrant_store import DEFAULT_COLLECTION, create_local_client, recreate_collection, upsert_chunks
-from sec_rag.vector_index import read_chunk_records_jsonl, write_index
+from sec_rag.pipeline import PipelineConfig, PipelineRunner
 
 
 def build_parser() -> argparse.ArgumentParser:
-    paths = get_project_paths()
+    defaults = PipelineConfig.default()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--chunks-dir",
-        default=paths.chunks_dir,
-        type=Path,
-        help="Directory containing chunk JSONL files.",
-    )
+    parser.add_argument("--chunks-dir", default=defaults.chunks_dir, type=Path)
     parser.add_argument(
         "--index-dir",
-        default=paths.indexes_dir / "qdrant",
+        default=None,
         type=Path,
-        help="Directory where the index should be written.",
+        help="Backward-compatible dense/NumPy index directory.",
     )
+    parser.add_argument("--qdrant-index-dir", default=defaults.qdrant_index_dir, type=Path)
+    parser.add_argument("--bm25-index-dir", default=defaults.bm25_index_dir, type=Path)
     parser.add_argument(
         "--backend",
-        choices=("qdrant", "numpy"),
-        default="qdrant",
-        help="Index backend to build.",
+        choices=("dense", "qdrant", "bm25", "hybrid", "numpy"),
+        default="dense",
     )
-    parser.add_argument(
-        "--collection",
-        default=DEFAULT_COLLECTION,
-        help="Qdrant collection name.",
-    )
-    parser.add_argument(
-        "--model-name",
-        default=DEFAULT_EMBEDDING_MODEL,
-        help="Sentence-transformers model name.",
-    )
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--collection", default=defaults.collection)
+    parser.add_argument("--model-name", default=defaults.model_name)
+    parser.add_argument("--batch-size", type=int, default=defaults.batch_size)
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    chunks = read_chunk_records_jsonl(args.chunks_dir)
-    if not chunks:
-        print(f"No chunk records found under: {args.chunks_dir}")
-        print("Run chunking first:")
-        print("  python scripts\\chunk_pages.py --input-dir data\\processed\\pages --output-dir data\\processed\\chunks")
-        return 1
-
-    print(f"Loading embedding model: {args.model_name}")
-    model = load_embedding_model(args.model_name)
-    texts = [chunk["text"] for chunk in chunks]
-    print(f"Embedding {len(texts)} chunk(s)")
-    embeddings = embed_texts(texts, model=model, batch_size=args.batch_size)
-
-    if args.backend == "qdrant":
-        client = create_local_client(args.index_dir)
-        recreate_collection(client, collection_name=args.collection, vector_size=embeddings.shape[1])
-        rows = upsert_chunks(client, args.collection, embeddings=embeddings, chunks=chunks)
-        print(f"Qdrant collection: {args.collection}")
-        print(f"Upserted rows: {rows}")
-    else:
-        write_index(args.index_dir, embeddings=embeddings, chunks=chunks, model_name=args.model_name)
-
-    print(f"Index written to: {args.index_dir}")
-    print(f"Rows: {len(chunks)}")
-    print(f"Dimensions: {embeddings.shape[1]}")
+    qdrant_index_dir = args.index_dir if args.index_dir is not None else args.qdrant_index_dir
+    config = replace(
+        PipelineConfig.default(),
+        chunks_dir=args.chunks_dir,
+        qdrant_index_dir=qdrant_index_dir,
+        bm25_index_dir=args.bm25_index_dir,
+        retriever_backend=args.backend,
+        collection=args.collection,
+        model_name=args.model_name,
+        batch_size=args.batch_size,
+        skip_parse=True,
+        skip_chunk=True,
+        skip_retrieve=True,
+        skip_eval=True,
+    )
+    qdrant_rows, bm25_rows = PipelineRunner(config).build_indexes()
+    print(f"Dense rows: {qdrant_rows}")
+    print(f"BM25 rows: {bm25_rows}")
     return 0
 
 

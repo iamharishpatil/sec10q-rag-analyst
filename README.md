@@ -54,19 +54,24 @@ Every implementation module includes:
 |   |-- explore_dataset.py
 |   |-- parse_pdfs.py
 |   |-- profile_qna.py
+|   |-- run_pipeline.py
 |   `-- retrieve.py
 |-- src/
 |   `-- sec_rag/
+|       |-- bm25_store.py
 |       |-- chunking.py
 |       |-- embeddings.py
 |       |-- __init__.py
 |       |-- config.py
 |       |-- documents.py
 |       |-- dataset.py
+|       |-- pipeline.py
 |       |-- pdf_parser.py
 |       |-- qdrant_store.py
 |       |-- qna.py
+|       |-- retrieval.py
 |       |-- retrieval_eval.py
+|       |-- retrievers.py
 |       `-- vector_index.py
 |-- tests/
 |-- AGENTS.md
@@ -79,13 +84,13 @@ Every implementation module includes:
 Run the current pipeline end to end:
 
 ```powershell
-python scripts\run_pipeline.py
+python scripts\run_pipeline.py --retriever hybrid
 ```
 
 Run a faster smoke test:
 
 ```powershell
-python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5
+python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5 --pages-dir data\processed\smoke-pages --chunks-dir data\processed\smoke-chunks --qdrant-index-dir data\indexes\smoke-qdrant --bm25-index-dir data\indexes\smoke-bm25
 ```
 
 The first runnable script is:
@@ -117,13 +122,27 @@ python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data
 Build the Qdrant vector database index:
 
 ```powershell
-python scripts\build_index.py --chunks-dir data\processed\chunks --index-dir data\indexes\qdrant
+python scripts\build_index.py --backend dense
+```
+
+Build the BM25 lexical index:
+
+```powershell
+python scripts\build_index.py --backend bm25
+```
+
+Build both dense and BM25 indexes for hybrid retrieval:
+
+```powershell
+python scripts\build_index.py --backend hybrid
 ```
 
 Retrieve chunks for a query:
 
 ```powershell
-python scripts\retrieve.py --query "What was Apple's total net sales in Q2 2023?"
+python scripts\retrieve.py --backend dense --query "What was Apple's total net sales in Q2 2023?"
+python scripts\retrieve.py --backend bm25 --query "What was Apple's total net sales in Q2 2023?"
+python scripts\retrieve.py --backend hybrid --query "What was Apple's total net sales in Q2 2023?"
 ```
 
 Retrieve with a metadata filter:
@@ -136,14 +155,21 @@ Evaluate source-document Recall@k:
 
 ```powershell
 python scripts\evaluate_retrieval.py --top-k 5
+python scripts\evaluate_retrieval.py --backend bm25 --top-k 5
+python scripts\evaluate_retrieval.py --backend hybrid --top-k 5
 ```
 
-Current full-dataset dense retrieval baseline:
+Current full-dataset retrieval baselines:
 
-- Backend: local Qdrant collection `sec_10q_chunks`
 - Index size: 1,935 chunk vectors
 - Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
-- Metric: Source-document Recall@5 = 0.949 over 195 Q&A rows
+- Dense Qdrant: Source-document Recall@5 = 0.949 over 195 Q&A rows
+- BM25: Source-document Recall@5 = 0.774 over 195 Q&A rows
+- Hybrid 0.65/0.35 fusion: Source-document Recall@5 = 0.944 over 195 Q&A rows
+
+Dense remains the best source-document Recall@5 baseline on this benchmark.
+BM25 and hybrid are kept because financial retrieval also needs exact-token
+behavior for numbers, product names, and ticker-specific queries.
 
 Local Qdrant storage should be accessed by one process at a time. For concurrent
 retrieval workloads, run Qdrant as a server instead of local file-backed mode.

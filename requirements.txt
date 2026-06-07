@@ -8,3 +8,4 @@ pymupdf>=1.24
 numpy>=1.26
 qdrant-client>=1.12
 sentence-transformers>=3.0
+rank-bm25>=0.2
