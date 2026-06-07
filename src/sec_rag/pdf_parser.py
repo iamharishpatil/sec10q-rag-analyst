@@ -9,6 +9,8 @@ from typing import Iterable
 
 import fitz
 
+from sec_rag.documents import metadata_from_pdf_path
+
 
 @dataclass(frozen=True)
 class PageRecord:
@@ -16,14 +18,28 @@ class PageRecord:
 
     document_id: str
     source_path: str
+    source_filename: str
+    ticker: str
+    company: str
+    year: int | None
+    quarter: int | None
+    filing_type: str
     page_number: int
     total_pages: int
     text: str
 
 
-def document_id_from_path(path: Path) -> str:
-    """Create a stable document id from a PDF path."""
-    return path.stem.replace(" ", "_").lower()
+@dataclass(frozen=True)
+class PdfParseSummary:
+    """Extraction quality summary for one parsed PDF."""
+
+    document_id: str
+    source_filename: str
+    total_pages: int
+    empty_pages: int
+    average_chars_per_page: float
+    shortest_page_chars: int
+    longest_page_chars: int
 
 
 def parse_pdf_pages(path: Path) -> tuple[PageRecord, ...]:
@@ -35,7 +51,7 @@ def parse_pdf_pages(path: Path) -> tuple[PageRecord, ...]:
         raise ValueError(f"Expected a PDF file, got: {pdf_path}")
 
     records: list[PageRecord] = []
-    document_id = document_id_from_path(pdf_path)
+    metadata = metadata_from_pdf_path(pdf_path)
 
     with fitz.open(pdf_path) as document:
         total_pages = document.page_count
@@ -43,8 +59,14 @@ def parse_pdf_pages(path: Path) -> tuple[PageRecord, ...]:
             page = document.load_page(page_index)
             records.append(
                 PageRecord(
-                    document_id=document_id,
+                    document_id=metadata.document_id,
                     source_path=str(pdf_path),
+                    source_filename=metadata.source_filename,
+                    ticker=metadata.ticker,
+                    company=metadata.company,
+                    year=metadata.year,
+                    quarter=metadata.quarter,
+                    filing_type=metadata.filing_type,
                     page_number=page_index + 1,
                     total_pages=total_pages,
                     text=page.get_text("text").strip(),
@@ -52,6 +74,32 @@ def parse_pdf_pages(path: Path) -> tuple[PageRecord, ...]:
             )
 
     return tuple(records)
+
+
+def summarize_page_records(records: Iterable[PageRecord]) -> PdfParseSummary:
+    """Summarize page extraction quality for one PDF."""
+    pages = tuple(records)
+    if not pages:
+        return PdfParseSummary(
+            document_id="",
+            source_filename="",
+            total_pages=0,
+            empty_pages=0,
+            average_chars_per_page=0.0,
+            shortest_page_chars=0,
+            longest_page_chars=0,
+        )
+
+    lengths = [len(page.text) for page in pages]
+    return PdfParseSummary(
+        document_id=pages[0].document_id,
+        source_filename=pages[0].source_filename,
+        total_pages=len(pages),
+        empty_pages=sum(1 for length in lengths if length == 0),
+        average_chars_per_page=sum(lengths) / len(lengths),
+        shortest_page_chars=min(lengths),
+        longest_page_chars=max(lengths),
+    )
 
 
 def write_page_records_jsonl(records: Iterable[PageRecord], output_path: Path) -> int:

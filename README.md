@@ -54,8 +54,10 @@ Every implementation module includes:
 |   `-- sec_rag/
 |       |-- __init__.py
 |       |-- config.py
+|       |-- documents.py
 |       |-- dataset.py
-|       `-- pdf_parser.py
+|       |-- pdf_parser.py
+|       `-- qna.py
 |-- tests/
 |-- AGENTS.md
 |-- pyproject.toml
@@ -84,6 +86,12 @@ Parse PDFs into page-aware JSONL records:
 python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
 ```
 
+Profile the primary Q&A benchmark:
+
+```powershell
+python scripts\profile_qna.py
+```
+
 ## Quickstart
 
 From the project root:
@@ -96,4 +104,5 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python scripts/explore_dataset.py --help
 python scripts/parse_pdfs.py --help
+python scripts/profile_qna.py --help
 ```

@@ -25,6 +25,17 @@ For every major change:
 - Add small smoke tests for scripts.
 - Track metrics before changing retrieval strategies.
 
+## Phase Completion
+
+At the end of every completed phase:
+
+- Update project-facing docs when commands, dependencies, or architecture change.
+- Update `docs/implementation_plan.md` with completed outcomes and remaining gaps.
+- Update local-only class notes under `docs/classes/`; these files are intentionally ignored by Git.
+- Run tests and lint before committing.
+- Commit only project code, tests, setup files, and project-facing docs.
+- Do not commit raw data, processed data, local lessons, virtual environments, caches, or package metadata.
+
 ## Project Principle
 
 If a choice cannot be explained in an interview, simplify it or document it.

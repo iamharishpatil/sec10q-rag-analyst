@@ -56,9 +56,17 @@ Interview angle:
 
 Outcome:
 
-- Extract page-aware text from filings. Initial parser added.
-- Preserve document ID, source path, page number, and total pages. Initial metadata added.
-- Preserve company, filing period, and section hints. Pending.
+- Extract page-aware text from filings. Done.
+- Preserve document ID, source path, page number, and total pages. Done.
+- Preserve company, ticker, year, quarter, filing type, and source filename. Done.
+- Add extraction quality summaries: page count, empty pages, and average characters per page. Done.
+- Preserve section hints. Pending.
+
+Current parser profile:
+
+- Full dataset parse command is available through `scripts/parse_pdfs.py`.
+- Page records are written as JSONL under ignored `data/processed/pages`.
+- Q&A profiling is available through `scripts/profile_qna.py`.
 
 Learning:
 

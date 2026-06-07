@@ -90,3 +90,9 @@ Parse PDFs into page-aware records:
 ```powershell
 python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
 ```
+
+Profile the Q&A benchmark:
+
+```powershell
+python scripts\profile_qna.py
+```

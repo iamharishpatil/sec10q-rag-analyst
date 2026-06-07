@@ -7,7 +7,7 @@ from pathlib import Path
 
 from sec_rag.config import get_project_paths
 from sec_rag.dataset import discover_dataset_files, dataset_missing_message, relative_paths
-from sec_rag.pdf_parser import parse_pdf_pages, write_page_records_jsonl
+from sec_rag.pdf_parser import parse_pdf_pages, summarize_page_records, write_page_records_jsonl
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,17 +47,26 @@ def main() -> int:
         return 1
 
     total_pages = 0
+    total_empty_pages = 0
     print(f"Parsing {len(pdfs)} PDF(s) from {inventory.root}")
     for pdf_path in pdfs:
         records = parse_pdf_pages(pdf_path)
+        summary = summarize_page_records(records)
         output_path = args.output_dir / f"{pdf_path.stem}.pages.jsonl"
         written = write_page_records_jsonl(records, output_path)
         total_pages += written
+        total_empty_pages += summary.empty_pages
         rel_pdf = relative_paths([pdf_path], inventory.root, limit=1)[0]
-        print(f"  - {rel_pdf}: {written} page record(s)")
+        print(
+            "  - "
+            f"{rel_pdf}: {written} page record(s), "
+            f"{summary.empty_pages} empty page(s), "
+            f"{summary.average_chars_per_page:.0f} avg chars/page"
+        )
 
     print(f"Output directory: {args.output_dir}")
     print(f"Total page records: {total_pages}")
+    print(f"Total empty pages: {total_empty_pages}")
     return 0
 
 
