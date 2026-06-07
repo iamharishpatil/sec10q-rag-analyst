@@ -35,14 +35,12 @@ Upgrade packaging tools:
 python -m pip install --upgrade pip setuptools wheel
 ```
 
-## First Development Dependencies
+## Install Dependencies
 
-We will install dependencies gradually. The first implementation step uses only
-the Python standard library, so it can run before installing ML packages. For
-development checks, install:
+Install the project and development tools:
 
 ```powershell
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-dev.txt
 ```
 
 Later modules will add packages such as:

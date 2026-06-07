@@ -61,10 +61,23 @@ Every implementation module includes:
 
 ## Current Status
 
-Class 01 and Class 02 are ready. The first runnable script is:
+The first runnable script is:
 
 ```powershell
 python scripts/explore_dataset.py --data-dir data/raw/sec-10-q
 ```
 
 Use it after downloading or cloning the dataset into `data/raw/sec-10-q`.
+
+## Quickstart
+
+From the project root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python scripts/explore_dataset.py --help
+```
