@@ -106,9 +106,20 @@ Interview angle:
 
 Outcome:
 
-- Generate embeddings.
-- Build the first FAISS or Qdrant index.
-- Evaluate Recall@k.
+- Generate embeddings. Done with an open-source sentence-transformers model.
+- Build the first vector database. Done with local Qdrant.
+- Keep a NumPy cosine path. Done as an inspectable baseline.
+- Evaluate Recall@k. Done as source-document Recall@k baseline.
+
+Current retrieval profile:
+
+- Qdrant index build command is available through `scripts/build_index.py`.
+- Top-k retrieval command is available through `scripts/retrieve.py`.
+- Source-document retrieval evaluation is available through `scripts/evaluate_retrieval.py`.
+- Current Qdrant collection: `sec_10q_chunks`.
+- Current index size: 1,935 chunk vectors with 384 embedding dimensions.
+- Full Qdrant evaluation: Source-document Recall@5 = 0.949 over 195 Q&A rows.
+- Local Qdrant mode should be used sequentially; Qdrant server is the next production step for concurrent access.
 
 Learning:
 

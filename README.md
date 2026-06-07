@@ -30,7 +30,7 @@ Every implementation module includes:
 - Language: Python 3.10+
 - PDF parsing: PyMuPDF first, table extraction later
 - Embeddings: sentence-transformers with open-source embedding models
-- Retrieval: FAISS or Qdrant, plus BM25 for hybrid retrieval
+- Retrieval: Qdrant vector database first, then BM25 for hybrid retrieval
 - LLM runtime: Ollama or llama.cpp with open-weight models
 - API: FastAPI
 - Evaluation: custom Recall@k first, RAGAS/DeepEval later
@@ -48,18 +48,26 @@ Every implementation module includes:
 |       `-- 02_dataset_exploration.md
 |-- scripts/
 |   |-- acquire_dataset.py
+|   |-- build_index.py
 |   |-- chunk_pages.py
+|   |-- evaluate_retrieval.py
 |   |-- explore_dataset.py
-|   `-- parse_pdfs.py
+|   |-- parse_pdfs.py
+|   |-- profile_qna.py
+|   `-- retrieve.py
 |-- src/
 |   `-- sec_rag/
 |       |-- chunking.py
+|       |-- embeddings.py
 |       |-- __init__.py
 |       |-- config.py
 |       |-- documents.py
 |       |-- dataset.py
 |       |-- pdf_parser.py
-|       `-- qna.py
+|       |-- qdrant_store.py
+|       |-- qna.py
+|       |-- retrieval_eval.py
+|       `-- vector_index.py
 |-- tests/
 |-- AGENTS.md
 |-- pyproject.toml
@@ -94,6 +102,40 @@ Chunk parsed page records into retrievable JSONL chunks:
 python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data\processed\chunks
 ```
 
+Build the Qdrant vector database index:
+
+```powershell
+python scripts\build_index.py --chunks-dir data\processed\chunks --index-dir data\indexes\qdrant
+```
+
+Retrieve chunks for a query:
+
+```powershell
+python scripts\retrieve.py --query "What was Apple's total net sales in Q2 2023?"
+```
+
+Retrieve with a metadata filter:
+
+```powershell
+python scripts\retrieve.py --query "What was Microsoft's revenue?" --ticker MSFT
+```
+
+Evaluate source-document Recall@k:
+
+```powershell
+python scripts\evaluate_retrieval.py --top-k 5
+```
+
+Current full-dataset dense retrieval baseline:
+
+- Backend: local Qdrant collection `sec_10q_chunks`
+- Index size: 1,935 chunk vectors
+- Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
+- Metric: Source-document Recall@5 = 0.949 over 195 Q&A rows
+
+Local Qdrant storage should be accessed by one process at a time. For concurrent
+retrieval workloads, run Qdrant as a server instead of local file-backed mode.
+
 Profile the primary Q&A benchmark:
 
 ```powershell
@@ -112,6 +154,9 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python scripts/explore_dataset.py --help
 python scripts/chunk_pages.py --help
+python scripts/build_index.py --help
+python scripts/retrieve.py --help
+python scripts/evaluate_retrieval.py --help
 python scripts/parse_pdfs.py --help
 python scripts/profile_qna.py --help
 ```

@@ -45,8 +45,6 @@ python -m pip install -r requirements-dev.txt
 
 Later modules will add packages such as:
 
-- `sentence-transformers` for embeddings.
-- `faiss-cpu` or `qdrant-client` for indexing.
 - `rank-bm25` for keyword retrieval.
 - `fastapi` and `uvicorn` for serving.
 
@@ -96,6 +94,42 @@ Chunk parsed pages:
 ```powershell
 python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data\processed\chunks
 ```
+
+Build the Qdrant vector database index:
+
+```powershell
+python scripts\build_index.py --chunks-dir data\processed\chunks --index-dir data\indexes\qdrant
+```
+
+Run retrieval:
+
+```powershell
+python scripts\retrieve.py --query "What was Apple's total net sales in Q2 2023?"
+```
+
+Run filtered retrieval:
+
+```powershell
+python scripts\retrieve.py --query "What was Microsoft's revenue?" --ticker MSFT
+```
+
+Evaluate source-document retrieval:
+
+```powershell
+python scripts\evaluate_retrieval.py --top-k 5
+```
+
+Expected current retrieval baseline after indexing all chunks:
+
+```text
+Questions: 195
+Backend: qdrant
+Hits@5: 185
+Source Recall@5: 0.949
+```
+
+Local Qdrant mode uses file locking. Run index/retrieval/evaluation commands
+sequentially, or use a Qdrant server for concurrent access.
 
 Profile the Q&A benchmark:
 

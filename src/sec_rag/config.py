@@ -15,6 +15,7 @@ class ProjectPaths:
     sec_10q_raw_dir: Path
     parsed_pages_dir: Path
     chunks_dir: Path
+    indexes_dir: Path
 
 
 def get_project_paths(root: Path | None = None) -> ProjectPaths:
@@ -29,4 +30,5 @@ def get_project_paths(root: Path | None = None) -> ProjectPaths:
         sec_10q_raw_dir=data_dir / "raw" / "sec-10-q",
         parsed_pages_dir=data_dir / "processed" / "pages",
         chunks_dir=data_dir / "processed" / "chunks",
+        indexes_dir=data_dir / "indexes",
     )

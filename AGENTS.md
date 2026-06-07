@@ -19,6 +19,7 @@ For every major change:
 - Do not hide retrieval internals; expose chunks, scores, metadata, and citations.
 - Use page-aware metadata everywhere citations are involved.
 - Chunking outputs must preserve source document and page metadata for citation tracing.
+- Retrieval phases should be production-shaped: use a vector database, metadata payloads, filters, and explicit metrics; keep simple baselines only for explanation/debugging.
 
 ## Verification
 
