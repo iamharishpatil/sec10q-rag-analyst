@@ -82,8 +82,15 @@ Interview angle:
 
 Outcome:
 
-- Implement fixed-size, overlapping chunks.
-- Add section-aware chunking when possible.
+- Implement fixed-size, overlapping chunks. Done.
+- Preserve source document and page metadata on every chunk. Done.
+- Add section-aware chunking when possible. Pending.
+
+Current chunking profile:
+
+- Page-local word chunking is available through `scripts/chunk_pages.py`.
+- Default chunk size is 350 words with 50-word overlap.
+- Chunk records are written as JSONL under ignored `data/processed/chunks`.
 
 Learning:
 

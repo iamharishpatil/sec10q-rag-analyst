@@ -91,6 +91,12 @@ Parse PDFs into page-aware records:
 python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
 ```
 
+Chunk parsed pages:
+
+```powershell
+python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data\processed\chunks
+```
+
 Profile the Q&A benchmark:
 
 ```powershell

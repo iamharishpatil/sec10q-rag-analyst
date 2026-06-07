@@ -18,6 +18,7 @@ For every major change:
 - Prefer measurable experiments over opinions.
 - Do not hide retrieval internals; expose chunks, scores, metadata, and citations.
 - Use page-aware metadata everywhere citations are involved.
+- Chunking outputs must preserve source document and page metadata for citation tracing.
 
 ## Verification
 

@@ -48,10 +48,12 @@ Every implementation module includes:
 |       `-- 02_dataset_exploration.md
 |-- scripts/
 |   |-- acquire_dataset.py
+|   |-- chunk_pages.py
 |   |-- explore_dataset.py
 |   `-- parse_pdfs.py
 |-- src/
 |   `-- sec_rag/
+|       |-- chunking.py
 |       |-- __init__.py
 |       |-- config.py
 |       |-- documents.py
@@ -86,6 +88,12 @@ Parse PDFs into page-aware JSONL records:
 python scripts\parse_pdfs.py --input-dir data\raw\sec-10-q --output-dir data\processed\pages
 ```
 
+Chunk parsed page records into retrievable JSONL chunks:
+
+```powershell
+python scripts\chunk_pages.py --input-dir data\processed\pages --output-dir data\processed\chunks
+```
+
 Profile the primary Q&A benchmark:
 
 ```powershell
@@ -103,6 +111,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 python scripts/explore_dataset.py --help
+python scripts/chunk_pages.py --help
 python scripts/parse_pdfs.py --help
 python scripts/profile_qna.py --help
 ```
