@@ -71,6 +71,18 @@ After creating the environment, acquire the dataset:
 python scripts\acquire_dataset.py
 ```
 
+Run the current pipeline end to end:
+
+```powershell
+python scripts\run_pipeline.py
+```
+
+For a faster smoke test:
+
+```powershell
+python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5
+```
+
 Then run:
 
 ```text

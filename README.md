@@ -76,6 +76,18 @@ Every implementation module includes:
 
 ## Current Status
 
+Run the current pipeline end to end:
+
+```powershell
+python scripts\run_pipeline.py
+```
+
+Run a faster smoke test:
+
+```powershell
+python scripts\run_pipeline.py --limit-pdfs 1 --eval-limit 5
+```
+
 The first runnable script is:
 
 ```powershell
@@ -157,6 +169,7 @@ python scripts/chunk_pages.py --help
 python scripts/build_index.py --help
 python scripts/retrieve.py --help
 python scripts/evaluate_retrieval.py --help
+python scripts/run_pipeline.py --help
 python scripts/parse_pdfs.py --help
 python scripts/profile_qna.py --help
 ```
