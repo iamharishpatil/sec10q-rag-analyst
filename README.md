@@ -48,6 +48,7 @@ Every implementation module includes:
 |       `-- 02_dataset_exploration.md
 |-- scripts/
 |   |-- acquire_dataset.py
+|   |-- ask.py
 |   |-- build_index.py
 |   |-- chunk_pages.py
 |   |-- evaluate_retrieval.py
@@ -58,10 +59,12 @@ Every implementation module includes:
 |   `-- retrieve.py
 |-- src/
 |   `-- sec_rag/
+|       |-- answering.py
 |       |-- bm25_store.py
 |       |-- chunking.py
 |       |-- embeddings.py
 |       |-- __init__.py
+|       |-- llm.py
 |       |-- config.py
 |       |-- documents.py
 |       |-- dataset.py
@@ -171,6 +174,33 @@ Dense remains the best source-document Recall@5 baseline on this benchmark.
 BM25 and hybrid are kept because financial retrieval also needs exact-token
 behavior for numbers, product names, and ticker-specific queries.
 
+Set up Groq for hosted open-model answer generation:
+
+```powershell
+setx GROQ_API_KEY "your_new_key_here"
+```
+
+Close and reopen the terminal, then verify without printing the key:
+
+```powershell
+python -c "import os; print('GROQ_API_KEY set:', bool(os.getenv('GROQ_API_KEY')))"
+```
+
+Ask a cited question:
+
+```powershell
+python scripts\ask.py --retriever dense --query "What was Apple's total net sales in Q2 2023?"
+```
+
+Current Groq smoke result:
+
+```text
+Provider: groq
+Model: llama-3.1-8b-instant
+Answer: $94,836 million
+Citation: 2023 Q2 AAPL.pdf page 19
+```
+
 Local Qdrant storage should be accessed by one process at a time. For concurrent
 retrieval workloads, run Qdrant as a server instead of local file-backed mode.
 
@@ -196,6 +226,7 @@ python scripts/build_index.py --help
 python scripts/retrieve.py --help
 python scripts/evaluate_retrieval.py --help
 python scripts/run_pipeline.py --help
+python scripts/ask.py --help
 python scripts/parse_pdfs.py --help
 python scripts/profile_qna.py --help
 ```

@@ -21,6 +21,7 @@ For every major change:
 - Chunking outputs must preserve source document and page metadata for citation tracing.
 - Retrieval phases should be production-shaped: use a vector database, metadata payloads, filters, and explicit metrics; keep simple baselines only for explanation/debugging.
 - Use OOP where it improves boundaries: orchestration, interchangeable retrieval strategies, and service-style dependencies. Keep pure transformations as functions.
+- Secrets such as API keys must only come from environment variables; never write them to code, docs, tests, commits, or logs.
 
 ## Verification
 

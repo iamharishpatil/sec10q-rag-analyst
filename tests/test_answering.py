@@ -1,0 +1,95 @@
+import json
+
+from sec_rag.answering import AnswerGenerator, build_context, parse_answer_json
+from sec_rag.llm import MockLLMProvider
+from sec_rag.retrieval import RetrievalFilters, RetrievalResult
+
+
+class FakeRetriever:
+    def __init__(self, results: tuple[RetrievalResult, ...]) -> None:
+        self.results = results
+        self.calls: list[tuple[str, int, RetrievalFilters | None]] = []
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        filters: RetrievalFilters | None = None,
+    ) -> tuple[RetrievalResult, ...]:
+        self.calls.append((query, top_k, filters))
+        return self.results[:top_k]
+
+
+def _result() -> RetrievalResult:
+    return RetrievalResult(
+        rank=1,
+        score=0.9,
+        backend="dense",
+        dense_score=0.9,
+        chunk={
+            "chunk_id": "2023_q2_aapl_p10_c0",
+            "source_filename": "2023 Q2 AAPL.pdf",
+            "ticker": "AAPL",
+            "page_number": 10,
+            "chunk_index": 0,
+            "text": "Apple total net sales were $94,836 million.",
+        },
+    )
+
+
+def test_build_context_renders_citation_metadata() -> None:
+    context = build_context((_result(),))
+
+    assert "[S1]" in context
+    assert "source_filename: 2023 Q2 AAPL.pdf" in context
+    assert "page_number: 10" in context
+    assert "Apple total net sales" in context
+
+
+def test_parse_answer_json_accepts_plain_json() -> None:
+    payload = {
+        "answer": "Apple total net sales were $94,836 million.",
+        "citations": [
+            {
+                "source_id": "S1",
+                "source_filename": "2023 Q2 AAPL.pdf",
+                "page_number": 10,
+                "chunk_id": "2023_q2_aapl_p10_c0",
+            }
+        ],
+        "abstained": False,
+    }
+
+    parsed = parse_answer_json(json.dumps(payload))
+
+    assert parsed["answer"] == "Apple total net sales were $94,836 million."
+    assert parsed["citations"][0].source_id == "S1"
+    assert not parsed["abstained"]
+
+
+def test_answer_generator_retrieves_and_calls_llm() -> None:
+    llm = MockLLMProvider(
+        json.dumps(
+            {
+                "answer": "Apple total net sales were $94,836 million.",
+                "citations": [
+                    {
+                        "source_id": "S1",
+                        "source_filename": "2023 Q2 AAPL.pdf",
+                        "page_number": 10,
+                        "chunk_id": "2023_q2_aapl_p10_c0",
+                    }
+                ],
+                "abstained": False,
+            }
+        )
+    )
+    retriever = FakeRetriever((_result(),))
+    generator = AnswerGenerator(retriever=retriever, llm_provider=llm, top_k=1)
+
+    answer = generator.answer("What were Apple total net sales?")
+
+    assert retriever.calls[0][0] == "What were Apple total net sales?"
+    assert answer.answer == "Apple total net sales were $94,836 million."
+    assert answer.citations[0].chunk_id == "2023_q2_aapl_p10_c0"
+    assert "Context:" in llm.messages[1]["content"]

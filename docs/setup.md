@@ -157,6 +157,39 @@ Hybrid Hits@5: 184, Source Recall@5: 0.944
 Local Qdrant mode uses file locking. Run index/retrieval/evaluation commands
 sequentially, or use a Qdrant server for concurrent access.
 
+## Hosted LLM Setup
+
+This project uses Groq as the first hosted open-model provider. The API key must
+come from the environment and must not be committed.
+
+Set the key on Windows PowerShell:
+
+```powershell
+setx GROQ_API_KEY "your_new_key_here"
+```
+
+Close and reopen the terminal, then verify without printing the key:
+
+```powershell
+python -c "import os; print('GROQ_API_KEY set:', bool(os.getenv('GROQ_API_KEY')))"
+```
+
+Ask a cited question:
+
+```powershell
+python scripts\ask.py --retriever dense --query "What was Apple's total net sales in Q2 2023?"
+```
+
+Expected smoke shape:
+
+```text
+Provider: groq
+Model: llama-3.1-8b-instant
+Abstained: False
+Answer: $94,836 million
+Citations: 2023 Q2 AAPL.pdf page 19
+```
+
 Profile the Q&A benchmark:
 
 ```powershell

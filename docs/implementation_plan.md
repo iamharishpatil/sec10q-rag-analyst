@@ -165,9 +165,18 @@ Interview angle:
 
 Outcome:
 
-- Run an open-weight local LLM.
-- Generate cited answers from retrieved chunks.
-- Enforce structured output.
+- Run a hosted open-model LLM through Groq because local inference is not available. Done.
+- Generate cited answers from retrieved chunks. Done.
+- Enforce structured JSON-shaped output. Done.
+- Add local Ollama support later if hardware becomes available. Pending.
+
+Current answer-generation profile:
+
+- `LLMProvider` interface supports provider isolation.
+- `GroqProvider` reads `GROQ_API_KEY` from the environment.
+- `AnswerGenerator` retrieves context and asks the LLM for cited JSON.
+- `scripts/ask.py` provides the user-facing command.
+- Smoke query answered Apple Q2 2023 net sales as `$94,836 million` with a citation to `2023 Q2 AAPL.pdf` page 19.
 
 Learning:
 
