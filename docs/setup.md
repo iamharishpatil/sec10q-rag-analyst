@@ -198,6 +198,18 @@ Controllable LLM parameters:
 - `--top-p`: nucleus sampling. Default is `1.0`.
 - `--no-strict-schema`: use best-effort JSON Schema mode instead of strict mode.
 
+The production prompt is stored as code in `src/sec_rag/prompts/financial_qa.py`.
+It uses:
+
+- Delimited retrieved context.
+- Edge-case few-shot examples for direct answers, insufficient evidence, and conflicting context.
+- Abstention rules.
+- Citation rules.
+- Strict Pydantic schema validation.
+
+The prompt does not request visible chain-of-thought. The model is instructed to
+check support internally and return only the final schema-compliant answer.
+
 Profile the Q&A benchmark:
 
 ```powershell

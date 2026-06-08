@@ -70,6 +70,8 @@ Every implementation module includes:
 |       |-- dataset.py
 |       |-- pipeline.py
 |       |-- pdf_parser.py
+|       |-- prompts/
+|       |   `-- financial_qa.py
 |       |-- qdrant_store.py
 |       |-- qna.py
 |       |-- retrieval.py
@@ -200,6 +202,12 @@ Model: openai/gpt-oss-20b
 Answer: $94,836 million
 Citation: 2023 Q2 AAPL.pdf page 19
 ```
+
+Prompting is implemented as code in `src/sec_rag/prompts/financial_qa.py`.
+The prompt uses delimited context blocks, edge-case few-shot examples,
+abstention rules, citation rules, and strict Pydantic/Groq JSON Schema output.
+It does not ask the model to expose chain-of-thought; support checking is
+internal and the returned output remains structured JSON.
 
 Local Qdrant storage should be accessed by one process at a time. For concurrent
 retrieval workloads, run Qdrant as a server instead of local file-backed mode.

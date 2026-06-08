@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from sec_rag.answering import AnswerGenerator, GroundedAnswer, GroundedAnswerSchema
@@ -47,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    configure_stdout()
     args = build_parser().parse_args()
     retriever = create_retriever(
         args.retriever,
@@ -73,6 +75,12 @@ def main() -> int:
     answer = generator.answer(args.query, filters=RetrievalFilters(ticker=args.ticker))
     print_answer(answer)
     return 0
+
+
+def configure_stdout() -> None:
+    """Prefer UTF-8 terminal output for model responses on Windows."""
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def print_answer(answer: GroundedAnswer) -> None:

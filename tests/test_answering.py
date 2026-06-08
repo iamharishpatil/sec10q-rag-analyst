@@ -1,5 +1,8 @@
 import json
 
+import pytest
+from pydantic import ValidationError
+
 from sec_rag.answering import (
     AnswerGenerator,
     GroundedAnswerSchema,
@@ -45,9 +48,9 @@ def _result() -> RetrievalResult:
 def test_build_context_renders_citation_metadata() -> None:
     context = build_context((_result(),))
 
-    assert "[S1]" in context
-    assert "source_filename: 2023 Q2 AAPL.pdf" in context
-    assert "page_number: 10" in context
+    assert '<source id="S1"' in context
+    assert 'source_filename="2023 Q2 AAPL.pdf"' in context
+    assert 'page_number="10"' in context
     assert "Apple total net sales" in context
 
 
@@ -65,11 +68,58 @@ def test_parse_answer_json_accepts_plain_json() -> None:
         "abstained": False,
     }
 
-    parsed = parse_answer_json(json.dumps(payload))
+    parsed = parse_answer_json(json.dumps(payload), retrieved=(_result(),))
 
     assert parsed["answer"] == "Apple total net sales were $94,836 million."
     assert parsed["citations"][0].source_id == "S1"
     assert not parsed["abstained"]
+
+
+def test_grounded_answer_schema_rejects_non_abstained_answer_without_citations() -> None:
+    with pytest.raises(ValidationError):
+        GroundedAnswerSchema.model_validate(
+            {
+                "answer": "Apple total net sales were $94,836 million.",
+                "citations": [],
+                "abstained": False,
+            }
+        )
+
+
+def test_grounded_answer_schema_rejects_abstained_answer_with_citations() -> None:
+    with pytest.raises(ValidationError):
+        GroundedAnswerSchema.model_validate(
+            {
+                "answer": "The context is insufficient.",
+                "citations": [
+                    {
+                        "source_id": "S1",
+                        "source_filename": "2023 Q2 AAPL.pdf",
+                        "page_number": 10,
+                        "chunk_id": "2023_q2_aapl_p10_c0",
+                    }
+                ],
+                "abstained": True,
+            }
+        )
+
+
+def test_parse_answer_json_rejects_citation_metadata_mismatch() -> None:
+    payload = {
+        "answer": "Apple total net sales were $94,836 million.",
+        "citations": [
+            {
+                "source_id": "S1",
+                "source_filename": "wrong.pdf",
+                "page_number": 10,
+                "chunk_id": "2023_q2_aapl_p10_c0",
+            }
+        ],
+        "abstained": False,
+    }
+
+    with pytest.raises(ValueError, match="citation metadata mismatch"):
+        parse_answer_json(json.dumps(payload), retrieved=(_result(),))
 
 
 def test_grounded_answer_schema_builds_groq_response_format() -> None:
@@ -106,4 +156,5 @@ def test_answer_generator_retrieves_and_calls_llm() -> None:
     assert retriever.calls[0][0] == "What were Apple total net sales?"
     assert answer.answer == "Apple total net sales were $94,836 million."
     assert answer.citations[0].chunk_id == "2023_q2_aapl_p10_c0"
-    assert "Context:" in llm.messages[1]["content"]
+    assert "<retrieved_context>" in llm.messages[1]["content"]
+    assert "<example name=\"insufficient_evidence\">" in llm.messages[1]["content"]

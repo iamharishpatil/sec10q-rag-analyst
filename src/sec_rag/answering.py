@@ -5,17 +5,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from sec_rag.llm import LLMProvider
+from sec_rag.prompts.financial_qa import FinancialQAPrompt, build_context as build_context
 from sec_rag.retrieval import RetrievalFilters, RetrievalResult, Retriever
-
-
-SYSTEM_PROMPT = """You are a financial RAG assistant.
-Answer only from the provided SEC 10-Q context.
-If the context does not contain enough evidence, abstain.
-Return only valid JSON matching the provided response schema.
-"""
 
 
 class AnswerCitationSchema(BaseModel):
@@ -28,6 +22,31 @@ class AnswerCitationSchema(BaseModel):
     page_number: int = Field(description="One-indexed source page number.")
     chunk_id: str = Field(description="Retrieved chunk identifier.")
 
+    @field_validator("source_id", "source_filename", "chunk_id")
+    @classmethod
+    def require_non_empty_string(cls, value: str, info: ValidationInfo) -> str:
+        """Reject blank citation fields."""
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError(f"{info.field_name} must not be empty")
+        return cleaned
+
+    @field_validator("source_id")
+    @classmethod
+    def require_source_id_shape(cls, value: str) -> str:
+        """Require source ids from the rendered context format."""
+        if not re.fullmatch(r"S[1-9][0-9]*", value):
+            raise ValueError("source_id must look like S1, S2, ...")
+        return value
+
+    @field_validator("page_number")
+    @classmethod
+    def require_positive_page_number(cls, value: int) -> int:
+        """Reject invalid page numbers."""
+        if value <= 0:
+            raise ValueError("page_number must be positive")
+        return value
+
 
 class GroundedAnswerSchema(BaseModel):
     """Pydantic schema for grounded answer output."""
@@ -39,6 +58,24 @@ class GroundedAnswerSchema(BaseModel):
         description="Citations that support the answer. Use an empty list when abstaining."
     )
     abstained: bool = Field(description="True when the context is insufficient to answer.")
+
+    @field_validator("answer")
+    @classmethod
+    def require_non_empty_answer(cls, value: str) -> str:
+        """Reject blank answers."""
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("answer must not be empty")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_abstention_citations(self) -> "GroundedAnswerSchema":
+        """Keep abstention and citation behavior consistent."""
+        if self.abstained and self.citations:
+            raise ValueError("abstained answers must not include citations")
+        if not self.abstained and not self.citations:
+            raise ValueError("non-abstained answers must include at least one citation")
+        return self
 
     @classmethod
     def groq_response_format(cls, strict: bool = True) -> dict:
@@ -86,11 +123,13 @@ class AnswerGenerator:
         llm_provider: LLMProvider,
         top_k: int = 5,
         max_context_chars: int = 12_000,
+        prompt: FinancialQAPrompt | None = None,
     ) -> None:
         self.retriever = retriever
         self.llm_provider = llm_provider
         self.top_k = top_k
         self.max_context_chars = max_context_chars
+        self.prompt = prompt or FinancialQAPrompt(max_context_chars=max_context_chars)
 
     def answer(
         self,
@@ -99,13 +138,9 @@ class AnswerGenerator:
     ) -> GroundedAnswer:
         """Retrieve context and generate a grounded answer."""
         retrieved = self.retriever.search(question, top_k=self.top_k, filters=filters)
-        messages = build_answer_messages(
-            question=question,
-            results=retrieved,
-            max_context_chars=self.max_context_chars,
-        )
+        messages = self.prompt.build_messages(question=question, results=retrieved)
         response = self.llm_provider.generate(messages)
-        parsed = parse_answer_json(response.content)
+        parsed = parse_answer_json(response.content, retrieved=retrieved)
         return GroundedAnswer(
             question=question,
             answer=parsed["answer"],
@@ -118,53 +153,11 @@ class AnswerGenerator:
         )
 
 
-def build_answer_messages(
-    question: str,
-    results: tuple[RetrievalResult, ...],
-    max_context_chars: int = 12_000,
-) -> list[dict[str, str]]:
-    """Build chat messages for grounded answer generation."""
-    context = build_context(results, max_context_chars=max_context_chars)
-    user_prompt = f"""Question:
-{question}
-
-Context:
-{context}
-"""
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": user_prompt},
-    ]
-
-
-def build_context(
-    results: tuple[RetrievalResult, ...],
-    max_context_chars: int = 12_000,
-) -> str:
-    """Render retrieved chunks as citation-ready context blocks."""
-    blocks: list[str] = []
-    used_chars = 0
-    for index, result in enumerate(results, start=1):
-        chunk = result.chunk
-        source_id = f"S{index}"
-        text = str(chunk.get("text", "")).strip()
-        block = (
-            f"[{source_id}]\n"
-            f"source_filename: {chunk.get('source_filename')}\n"
-            f"page_number: {chunk.get('page_number')}\n"
-            f"chunk_id: {chunk.get('chunk_id')}\n"
-            f"text: {text}\n"
-        )
-        if used_chars + len(block) > max_context_chars:
-            break
-        blocks.append(block)
-        used_chars += len(block)
-    return "\n".join(blocks)
-
-
-def parse_answer_json(content: str) -> dict:
+def parse_answer_json(content: str, retrieved: tuple[RetrievalResult, ...] = tuple()) -> dict:
     """Parse and validate LLM JSON output with Pydantic."""
     payload = GroundedAnswerSchema.model_validate_json(_extract_json_object(content))
+    if retrieved:
+        validate_citations_against_retrieved(payload.citations, retrieved)
     citations = tuple(_parse_citation(citation) for citation in payload.citations)
     return {
         "answer": payload.answer.strip(),
@@ -180,6 +173,33 @@ def _parse_citation(payload: AnswerCitationSchema) -> AnswerCitation:
         page_number=payload.page_number,
         chunk_id=payload.chunk_id,
     )
+
+
+def validate_citations_against_retrieved(
+    citations: list[AnswerCitationSchema],
+    retrieved: tuple[RetrievalResult, ...],
+) -> None:
+    """Validate that cited source ids and metadata match retrieved chunks."""
+    sources = {
+        f"S{index}": result.chunk
+        for index, result in enumerate(retrieved, start=1)
+    }
+    for citation in citations:
+        chunk = sources.get(citation.source_id)
+        if chunk is None:
+            raise ValueError(f"citation source_id was not retrieved: {citation.source_id}")
+        expected = {
+            "source_filename": str(chunk.get("source_filename", "")),
+            "page_number": int(chunk.get("page_number", 0)),
+            "chunk_id": str(chunk.get("chunk_id", "")),
+        }
+        actual = {
+            "source_filename": citation.source_filename,
+            "page_number": citation.page_number,
+            "chunk_id": citation.chunk_id,
+        }
+        if actual != expected:
+            raise ValueError(f"citation metadata mismatch for {citation.source_id}")
 
 
 def _extract_json_object(content: str) -> str:

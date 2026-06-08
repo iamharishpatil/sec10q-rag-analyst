@@ -176,8 +176,11 @@ Current answer-generation profile:
 - `GroqProvider` reads `GROQ_API_KEY` from the environment.
 - `GroqProvider` uses `temperature=0.0` by default for deterministic financial QA.
 - `AnswerGenerator` retrieves context and asks the LLM for cited JSON validated by Pydantic.
+- Financial QA prompts are implemented as prompt-as-code in `src/sec_rag/prompts/financial_qa.py`.
+- Prompting uses delimited context, edge-case few-shot examples, abstention rules, and citation rules.
 - `scripts/ask.py` provides the user-facing command.
 - Strict Groq JSON Schema mode is enabled from `GroundedAnswerSchema.model_json_schema()`.
+- Visible chain-of-thought is intentionally not requested; support checks happen internally and output remains structured.
 - Smoke query answered Apple Q2 2023 net sales as `$94,836 million` with citations to `2023 Q2 AAPL.pdf` pages 19 and 10.
 
 Learning:
