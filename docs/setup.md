@@ -196,7 +196,18 @@ Controllable LLM parameters:
 - `--temperature`: randomness. Default is `0.0` for deterministic financial answers.
 - `--max-tokens`: answer token budget. Default is `700`.
 - `--top-p`: nucleus sampling. Default is `1.0`.
+- `--response-format`: `json-schema`, `json-object`, or `none`.
 - `--no-strict-schema`: use best-effort JSON Schema mode instead of strict mode.
+
+Use Llama 3.3 70B on Groq:
+
+```powershell
+python scripts\ask.py --retriever dense --temperature 0 --llm-model llama-3.3-70b-versatile --response-format json-object --query "What was Apple's total net sales in Q2 2023?"
+```
+
+`llama-3.3-70b-versatile` is available on Groq's Free Plan rate-limit table, but
+it does not support strict `json_schema`. Use `json-object` for that model and
+let Pydantic validate the returned JSON.
 
 The production prompt is stored as code in `src/sec_rag/prompts/financial_qa.py`.
 It uses:

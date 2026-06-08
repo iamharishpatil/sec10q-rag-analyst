@@ -33,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use best-effort JSON Schema mode instead of strict schema mode.",
     )
     parser.add_argument(
+        "--response-format",
+        choices=("json-schema", "json-object", "none"),
+        default="json-schema",
+        help="Groq response format. Use json-object for models that do not support json-schema.",
+    )
+    parser.add_argument(
         "--retriever",
         choices=("dense", "qdrant", "bm25", "hybrid", "numpy"),
         default="dense",
@@ -62,9 +68,7 @@ def main() -> int:
         temperature=args.temperature,
         max_tokens=args.max_tokens,
         top_p=args.top_p,
-        response_format=GroundedAnswerSchema.groq_response_format(
-            strict=not args.no_strict_schema,
-        ),
+        response_format=build_response_format(args.response_format, strict=not args.no_strict_schema),
     )
     generator = AnswerGenerator(
         retriever=retriever,
@@ -81,6 +85,17 @@ def configure_stdout() -> None:
     """Prefer UTF-8 terminal output for model responses on Windows."""
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
+def build_response_format(format_name: str, strict: bool = True) -> dict | None:
+    """Build the Groq response_format payload for the selected mode."""
+    if format_name == "json-schema":
+        return GroundedAnswerSchema.groq_response_format(strict=strict)
+    if format_name == "json-object":
+        return {"type": "json_object"}
+    if format_name == "none":
+        return None
+    raise ValueError(f"Unsupported response format: {format_name}")
 
 
 def print_answer(answer: GroundedAnswer) -> None:

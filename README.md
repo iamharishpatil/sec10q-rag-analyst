@@ -194,6 +194,16 @@ Ask a cited question:
 python scripts\ask.py --retriever dense --temperature 0 --query "What was Apple's total net sales in Q2 2023?"
 ```
 
+Use Llama 3.3 70B on Groq:
+
+```powershell
+python scripts\ask.py --retriever dense --temperature 0 --llm-model llama-3.3-70b-versatile --response-format json-object --query "What was Apple's total net sales in Q2 2023?"
+```
+
+`llama-3.3-70b-versatile` is listed on Groq's Free Plan rate-limit table, but it
+does not support strict `json_schema` response format. Use `json-object` and keep
+Pydantic validation enabled after generation.
+
 Current Groq smoke result:
 
 ```text

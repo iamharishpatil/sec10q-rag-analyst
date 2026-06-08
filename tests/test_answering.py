@@ -11,6 +11,7 @@ from sec_rag.answering import (
 )
 from sec_rag.llm import MockLLMProvider
 from sec_rag.retrieval import RetrievalFilters, RetrievalResult
+from scripts.ask import build_response_format
 
 
 class FakeRetriever:
@@ -129,6 +130,11 @@ def test_grounded_answer_schema_builds_groq_response_format() -> None:
     assert response_format["json_schema"]["strict"] is True
     assert response_format["json_schema"]["schema"]["additionalProperties"] is False
     assert "answer" in response_format["json_schema"]["schema"]["properties"]
+
+
+def test_ask_cli_response_format_builder_supports_json_object() -> None:
+    assert build_response_format("json-object") == {"type": "json_object"}
+    assert build_response_format("none") is None
 
 
 def test_answer_generator_retrieves_and_calls_llm() -> None:
