@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from sec_rag.answering import AnswerGenerator, GroundedAnswer
+from sec_rag.answering import AnswerGenerator, GroundedAnswer, GroundedAnswerSchema
 from sec_rag.llm import DEFAULT_GROQ_MODEL, GroqProvider
 from sec_rag.pipeline import PipelineConfig
 from sec_rag.retrieval import RetrievalFilters
@@ -23,6 +23,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Hosted LLM provider.",
     )
     parser.add_argument("--llm-model", default=DEFAULT_GROQ_MODEL)
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--max-tokens", type=int, default=700)
+    parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument(
+        "--no-strict-schema",
+        action="store_true",
+        help="Use best-effort JSON Schema mode instead of strict schema mode.",
+    )
     parser.add_argument(
         "--retriever",
         choices=("dense", "qdrant", "bm25", "hybrid", "numpy"),
@@ -47,7 +55,15 @@ def main() -> int:
         collection=args.collection,
         model_name=args.embedding_model,
     )
-    provider = GroqProvider(model=args.llm_model)
+    provider = GroqProvider(
+        model=args.llm_model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+        top_p=args.top_p,
+        response_format=GroundedAnswerSchema.groq_response_format(
+            strict=not args.no_strict_schema,
+        ),
+    )
     generator = AnswerGenerator(
         retriever=retriever,
         llm_provider=provider,

@@ -1,6 +1,11 @@
 import json
 
-from sec_rag.answering import AnswerGenerator, build_context, parse_answer_json
+from sec_rag.answering import (
+    AnswerGenerator,
+    GroundedAnswerSchema,
+    build_context,
+    parse_answer_json,
+)
 from sec_rag.llm import MockLLMProvider
 from sec_rag.retrieval import RetrievalFilters, RetrievalResult
 
@@ -65,6 +70,15 @@ def test_parse_answer_json_accepts_plain_json() -> None:
     assert parsed["answer"] == "Apple total net sales were $94,836 million."
     assert parsed["citations"][0].source_id == "S1"
     assert not parsed["abstained"]
+
+
+def test_grounded_answer_schema_builds_groq_response_format() -> None:
+    response_format = GroundedAnswerSchema.groq_response_format()
+
+    assert response_format["type"] == "json_schema"
+    assert response_format["json_schema"]["strict"] is True
+    assert response_format["json_schema"]["schema"]["additionalProperties"] is False
+    assert "answer" in response_format["json_schema"]["schema"]["properties"]
 
 
 def test_answer_generator_retrieves_and_calls_llm() -> None:

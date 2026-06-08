@@ -174,9 +174,11 @@ Current answer-generation profile:
 
 - `LLMProvider` interface supports provider isolation.
 - `GroqProvider` reads `GROQ_API_KEY` from the environment.
-- `AnswerGenerator` retrieves context and asks the LLM for cited JSON.
+- `GroqProvider` uses `temperature=0.0` by default for deterministic financial QA.
+- `AnswerGenerator` retrieves context and asks the LLM for cited JSON validated by Pydantic.
 - `scripts/ask.py` provides the user-facing command.
-- Smoke query answered Apple Q2 2023 net sales as `$94,836 million` with a citation to `2023 Q2 AAPL.pdf` page 19.
+- Strict Groq JSON Schema mode is enabled from `GroundedAnswerSchema.model_json_schema()`.
+- Smoke query answered Apple Q2 2023 net sales as `$94,836 million` with citations to `2023 Q2 AAPL.pdf` pages 19 and 10.
 
 Learning:
 

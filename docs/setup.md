@@ -177,18 +177,26 @@ python -c "import os; print('GROQ_API_KEY set:', bool(os.getenv('GROQ_API_KEY'))
 Ask a cited question:
 
 ```powershell
-python scripts\ask.py --retriever dense --query "What was Apple's total net sales in Q2 2023?"
+python scripts\ask.py --retriever dense --temperature 0 --query "What was Apple's total net sales in Q2 2023?"
 ```
 
 Expected smoke shape:
 
 ```text
 Provider: groq
-Model: llama-3.1-8b-instant
+Model: openai/gpt-oss-20b
 Abstained: False
 Answer: $94,836 million
 Citations: 2023 Q2 AAPL.pdf page 19
 ```
+
+Controllable LLM parameters:
+
+- `--llm-model`: hosted Groq model. Default is `openai/gpt-oss-20b` because it supports strict structured output.
+- `--temperature`: randomness. Default is `0.0` for deterministic financial answers.
+- `--max-tokens`: answer token budget. Default is `700`.
+- `--top-p`: nucleus sampling. Default is `1.0`.
+- `--no-strict-schema`: use best-effort JSON Schema mode instead of strict mode.
 
 Profile the Q&A benchmark:
 

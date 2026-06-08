@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 
-DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
 
 
 @dataclass(frozen=True)
@@ -34,13 +35,17 @@ class GroqProvider(LLMProvider):
         self,
         model: str = DEFAULT_GROQ_MODEL,
         api_key: str | None = None,
-        temperature: float = 0.1,
+        temperature: float = 0.0,
         max_tokens: int = 700,
+        top_p: float = 1.0,
+        response_format: dict[str, Any] | None = None,
     ) -> None:
         self.model = model
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.top_p = top_p
+        self.response_format = response_format
         if not self.api_key:
             raise RuntimeError("GROQ_API_KEY is not set")
 
@@ -53,6 +58,8 @@ class GroqProvider(LLMProvider):
             messages=[dict(message) for message in messages],
             temperature=self.temperature,
             max_tokens=self.max_tokens,
+            top_p=self.top_p,
+            response_format=self.response_format,
         )
         content = response.choices[0].message.content or ""
         return LLMResponse(content=content, model=self.model, provider="groq")

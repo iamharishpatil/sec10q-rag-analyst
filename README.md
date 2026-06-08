@@ -189,14 +189,14 @@ python -c "import os; print('GROQ_API_KEY set:', bool(os.getenv('GROQ_API_KEY'))
 Ask a cited question:
 
 ```powershell
-python scripts\ask.py --retriever dense --query "What was Apple's total net sales in Q2 2023?"
+python scripts\ask.py --retriever dense --temperature 0 --query "What was Apple's total net sales in Q2 2023?"
 ```
 
 Current Groq smoke result:
 
 ```text
 Provider: groq
-Model: llama-3.1-8b-instant
+Model: openai/gpt-oss-20b
 Answer: $94,836 million
 Citation: 2023 Q2 AAPL.pdf page 19
 ```

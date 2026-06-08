@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from sec_rag.llm import LLMProvider
 from sec_rag.retrieval import RetrievalFilters, RetrievalResult, Retriever
@@ -13,20 +14,43 @@ from sec_rag.retrieval import RetrievalFilters, RetrievalResult, Retriever
 SYSTEM_PROMPT = """You are a financial RAG assistant.
 Answer only from the provided SEC 10-Q context.
 If the context does not contain enough evidence, abstain.
-Return only valid JSON with this schema:
-{
-  "answer": "short answer string",
-  "citations": [
-    {
-      "source_id": "S1",
-      "source_filename": "file.pdf",
-      "page_number": 1,
-      "chunk_id": "chunk id"
-    }
-  ],
-  "abstained": false
-}
+Return only valid JSON matching the provided response schema.
 """
+
+
+class AnswerCitationSchema(BaseModel):
+    """Pydantic schema for one answer citation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str = Field(description="Context source id, for example S1.")
+    source_filename: str = Field(description="Source SEC filing filename.")
+    page_number: int = Field(description="One-indexed source page number.")
+    chunk_id: str = Field(description="Retrieved chunk identifier.")
+
+
+class GroundedAnswerSchema(BaseModel):
+    """Pydantic schema for grounded answer output."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    answer: str = Field(description="Short answer grounded only in the provided context.")
+    citations: list[AnswerCitationSchema] = Field(
+        description="Citations that support the answer. Use an empty list when abstaining."
+    )
+    abstained: bool = Field(description="True when the context is insufficient to answer.")
+
+    @classmethod
+    def groq_response_format(cls, strict: bool = True) -> dict:
+        """Return Groq JSON Schema response_format from the Pydantic schema."""
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "grounded_answer",
+                "strict": strict,
+                "schema": cls.model_json_schema(),
+            },
+        }
 
 
 @dataclass(frozen=True)
@@ -139,22 +163,22 @@ def build_context(
 
 
 def parse_answer_json(content: str) -> dict:
-    """Parse and normalize LLM JSON output."""
-    payload = json.loads(_extract_json_object(content))
-    citations = tuple(_parse_citation(citation) for citation in payload.get("citations", []))
+    """Parse and validate LLM JSON output with Pydantic."""
+    payload = GroundedAnswerSchema.model_validate_json(_extract_json_object(content))
+    citations = tuple(_parse_citation(citation) for citation in payload.citations)
     return {
-        "answer": str(payload.get("answer", "")).strip(),
+        "answer": payload.answer.strip(),
         "citations": citations,
-        "abstained": bool(payload.get("abstained", False)),
+        "abstained": payload.abstained,
     }
 
 
-def _parse_citation(payload: dict) -> AnswerCitation:
+def _parse_citation(payload: AnswerCitationSchema) -> AnswerCitation:
     return AnswerCitation(
-        source_id=str(payload.get("source_id", "")),
-        source_filename=str(payload.get("source_filename", "")),
-        page_number=int(payload.get("page_number", 0)),
-        chunk_id=str(payload.get("chunk_id", "")),
+        source_id=payload.source_id,
+        source_filename=payload.source_filename,
+        page_number=payload.page_number,
+        chunk_id=payload.chunk_id,
     )
 
 
